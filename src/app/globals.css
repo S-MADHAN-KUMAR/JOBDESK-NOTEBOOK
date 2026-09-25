@@ -1,0 +1,112 @@
+@import "tailwindcss";
+
+/*
+  Design tokens — set from the inspo study of 24 job-search / dev-tool sites:
+    paperBand    = light        (83% consensus)
+    displayClass = grotesk-sans (79% consensus)
+    accentHue    = cool         (50% consensus)
+  Table treatment follows the editorial spec-sheet archetype:
+  hairline rules, mono labels, NO zebra striping, rows lift on hover.
+*/
+
+:root {
+  --paper: #fbfbfa;
+  --raised: #ffffff;
+  --ink: #0b1020;
+  --ink-muted: #5f6672;
+  --ink-faint: #9aa1ad;
+  --rule: #e6e6e3;
+  --rule-strong: #d4d4d0;
+
+  --accent: #242cd4;
+  --accent-ink: #1a1fa8;
+  --accent-wash: #eef0ff;
+
+  --ok: #048a4a;
+  --ok-wash: #e6f6ee;
+
+  --warn: #f5d312;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-raised: var(--raised);
+  --color-ink: var(--ink);
+  --color-muted: var(--ink-muted);
+  --color-faint: var(--ink-faint);
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-wash: var(--accent-wash);
+  --color-ok: var(--ok);
+  --color-ok-wash: var(--ok-wash);
+  --color-warn: var(--warn);
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+@layer base {
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* Declared in `components` so Tailwind utilities (later layer) can override. */
+@layer components {
+  /* All-caps mono label — the Dovetail metadata pattern used for column heads. */
+  .meta {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    line-height: 1.2;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  /* Row hover: lift a hair so the eye tracks across columns. No colour change. */
+  .row-lift {
+    transition: background-color 120ms ease;
+  }
+
+  .row-lift:hover {
+    background-color: color-mix(in oklab, var(--ink) 3%, transparent);
+  }
+
+  /* Focus ring that reads on both the paper and the accent. */
+  .focus-ring:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  /* Thin-rule spec-sheet table shared by dashboard + seed preview. */
+  .spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+  }
+
+  .spec-table th {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 400;
+    color: var(--ink-faint);
+    text-align: left;
+    padding: 0.75rem 1rem 0.75rem 0;
+    border-bottom: 1px solid var(--rule-strong);
+    white-space: nowrap;
+  }
+
+  .spec-table td {
+    padding: 0.875rem 1rem 0.875rem 0;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+}
