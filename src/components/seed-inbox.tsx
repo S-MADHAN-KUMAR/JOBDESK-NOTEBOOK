@@ -36,6 +36,7 @@ export function SeedInbox() {
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [dragging, setDragging] = useState(false);
+  const [dropped, setDropped] = useState(false);
   const [staged, setStaged] = useState<Staged[]>([]);
   const [meta, setMeta] = useState<OrganizeMeta | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -54,6 +55,7 @@ export function SeedInbox() {
     setBusy(true);
     setError(null);
     setSaved(null);
+    setDropped(false);
 
     try {
       const res = await fetch("/api/organize", {
@@ -86,15 +88,20 @@ export function SeedInbox() {
     }
   }, []);
 
-  /* Paste: fire as soon as content lands, per the requirement. */
+  /* Paste: the text lands in the box. Mapping happens on Organise, not before. */
   function handlePaste(e: React.ClipboardEvent<HTMLTextAreaElement>) {
     const pasted = e.clipboardData.getData("text");
     if (pasted.trim().length < 12) return; // too small to be a posting
-    // Let React commit the text first, then organise it.
-    setTimeout(() => runOrganize(`${text}${pasted}`), 0);
+    // Let React commit the text first, then note that it is ready to organise.
+    setTimeout(() => {
+      setSaved(null);
+      setError(null);
+      setStaged([]);
+      setMeta(null);
+    }, 0);
   }
 
-  /* Drop: files or plain text. */
+  /* Drop: files or plain text — loaded into the box, not mapped yet. */
   async function handleDrop(e: React.DragEvent) {
     e.preventDefault();
     setDragging(false);
@@ -116,7 +123,7 @@ export function SeedInbox() {
       const joined = parts.filter(Boolean).join("\n\n").trim();
       if (joined) {
         setText(joined);
-        await runOrganize(joined);
+        setDropped(true);
         return;
       }
       setError("Drop a text file (.txt, .md, .csv, .json, .html) or plain text.");
@@ -126,7 +133,7 @@ export function SeedInbox() {
     const dropped = e.dataTransfer.getData("text");
     if (dropped.trim()) {
       setText(dropped);
-      await runOrganize(dropped);
+      setDropped(true);
       return;
     }
 
@@ -193,7 +200,8 @@ export function SeedInbox() {
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-muted">
           Paste or drop the raw scrape — WhatsApp forward, board export, half a PDF.
-          Fields arrive out of order; the model puts role, company, HR contact and
+          Nothing is mapped until you press <strong className="font-medium text-ink">Organise</strong>:
+          the model then reads the whole paste and puts role, company, HR contact and
           phone back where they belong.
         </p>
       </div>
@@ -244,6 +252,7 @@ export function SeedInbox() {
                 setMeta(null);
                 setError(null);
                 setSaved(null);
+                setDropped(false);
                 textareaRef.current?.focus();
               }}
               disabled={!text && staged.length === 0}
@@ -256,6 +265,12 @@ export function SeedInbox() {
               {busy ? "Reading…" : `${text.length.toLocaleString()} chars`}
             </p>
           </div>
+
+          {dropped && !busy && staged.length === 0 && (
+            <p className="meta mt-3 text-accent-ink">
+              Loaded from your drop — press Organise to map it with the model.
+            </p>
+          )}
 
           {meta && !busy && (
             <p className="meta mt-3 flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -305,7 +320,9 @@ export function SeedInbox() {
                 {busy ? "Reading your paste…" : "Nothing organised yet."}
               </p>
               <p className="meta mt-2">
-                {busy ? "Extracting role, company, HR and phone" : "Paste or drop text on the left"}
+                {busy
+                  ? "Extracting role, company, HR and phone"
+                  : "Press Organise on the left — nothing is mapped until you do"}
               </p>
             </div>
           ) : (

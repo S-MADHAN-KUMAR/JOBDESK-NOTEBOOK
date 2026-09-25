@@ -7,7 +7,7 @@ Two pages:
 | Page | What it does |
 | --- | --- |
 | `/` **Dashboard** | Every job in one spec-sheet table — posted date, role, company, location, HR name, phone, reached/not-reached checkbox. Search + status filters. |
-| `/seed` **Seed** | A blank notebook page. Paste or drag raw text (out-of-order fields, several jobs at once) and Groq organises it into structured rows for review before saving. |
+| `/seed` **Seed** | A blank notebook page. Paste or drop raw text (out-of-order fields, several jobs at once) — nothing is mapped until you press **Organise**, which runs Groq and stages structured rows for review before saving. |
 
 ## Quick start
 
@@ -29,6 +29,22 @@ here that must win**; anything omitted falls through to `.env`.
 | `DATABASE_URL` | Postgres connection string. Use the **pooled** Neon endpoint in production. |
 | `GROQ_API_KEY` | From <https://console.groq.com/keys>. Leave unset and the app falls back to a local rule-based parser — nothing breaks. |
 | `GROQ_MODEL` | Defaults to `openai/gpt-oss-120b`. |
+| `AUTH_USERNAME` / `AUTH_PASSWORD` | Who can sign in to the board. Set both or sign-in is disabled with a 503. |
+| `SESSION_SECRET` | Signs the session cookie (`openssl rand -base64 32`). Rotating it signs everyone out. |
+
+## Sign-in
+
+Every page and API is behind `src/proxy.ts` (Next 16's renamed middleware):
+unauthenticated page requests redirect to `/login?next=…`, API requests answer
+`401`, and static assets stay public.
+
+- Credentials come from `AUTH_USERNAME` / `AUTH_PASSWORD` and are compared in
+  constant time (HMAC digests, both sides always evaluated).
+- The session is a 7-day HMAC-SHA256-signed cookie (`HttpOnly`, `SameSite=Lax`,
+  `Secure` in production) — no third-party auth library, verified in the Edge
+  proxy with Web Crypto, so it also runs on the Node runtime.
+- Failed logins always take 400 ms, so timing does not leak a partial match.
+- **Sign out** sits next to Refresh on the dashboard.
 
 > **Model note:** `llama-3.3-70b-versatile` and `llama-3.1-8b-instant` are
 > *Enterprise*-gated on Groq and return `404 model_not_found` on standard keys.
@@ -54,23 +70,48 @@ npm run db:seed      # insert sample rows
 
 | Method | Route | Purpose |
 | --- | --- | --- |
+| `POST` | `/api/auth/login` | `{username,password}` → sets the session cookie |
+| `POST` | `/api/auth/logout` | Clears the session cookie |
 | `GET` | `/api/jobs?q=&reached=&limit=&offset=` | List jobs + stats |
 | `POST` | `/api/jobs` | Create many jobs |
 | `PATCH` | `/api/jobs/:id` | Toggle `reached`, edit fields |
-| `DELETE` | `/api/jobs/:id` | Remove a job |
+| `DELETE` | `/api/jobs/:id` | Remove one job |
+| `POST` | `/api/jobs/bulk` | `{ids:[…]}` → delete many jobs in one round-trip |
 | `POST` | `/api/organize` | `{text}` → Groq returns structured job drafts (does not save) |
 
 ## How organising works
 
-1. Text arrives by paste, file drop, or the **Organise** button.
-2. `src/lib/organize.ts` sends it to Groq with a system prompt that expects
-   fields in any order, several jobs per paste, and explicit `null`s for gaps.
-3. Dates normalise to `YYYY-MM-DD`, phones are validated and de-noised.
-4. Rows appear as a preview — untick any you don't want, then **Add to dashboard**.
-5. The raw paste is stored in `ingests` regardless of outcome.
+1. Paste or drop fills the box only — **nothing is mapped until you press
+   Organise**. The same is true after a drop: a hint reminds you to organise.
+2. `src/lib/organize.ts` sends the text to Groq with a system prompt that
+   expects fields in any order, several jobs per paste, explicit `null`s for
+   gaps, and — importantly — one row per posting.
+3. **One posting, one row.** A contact's designation ("Project Manager") next
+   to their name and phone is not a vacancy; the prompt says so with a worked
+   example, and `mergePostings()` enforces it afterwards: rows sharing a phone
+   number, a contact, or a bare designation card at the same company are
+   collapsed, with the discarded label kept in `notes`.
+4. Dates normalise to `YYYY-MM-DD` — including relative ages printed in board
+   headers ("India · 8 hours ago" → today minus 8 hours, "yesterday", "2 days
+   ago"). Application-side timestamps ("Application submitted 2 hours ago",
+   "Promoted", "Over 100 applicants") are ignored. Phones are de-noised.
+5. Rows appear as a preview — untick any you don't want, then **Add to dashboard**.
+6. The raw paste is stored in `ingests` regardless of outcome.
 
 If `GROQ_API_KEY` is missing or Groq errors, a local heuristic parser takes over
-(`engine: "local"`), so the app keeps working offline.
+(`engine: "local"`), so the app keeps working offline. A single malformed row
+from the model no longer voids the whole batch — bad rows are dropped or given
+a placeholder rather than failing the parse.
+
+## The board
+
+- **Search + status filters** across role, company, location, HR and phone.
+- **Select rows** with the header checkbox (selects everything visible) or
+  one at a time, then **Delete N rows** in one round-trip
+  (`POST /api/jobs/bulk`).
+- **Edit any row in place** — pencil icon → the row becomes inputs → Save or
+  Cancel. Edits go through `PATCH /api/jobs/:id` and roll back on failure.
+- **Delete a single row** with the trash icon; **Reached** toggles optimistically.
 
 ## Development
 

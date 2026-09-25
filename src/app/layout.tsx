@@ -43,11 +43,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      {/* suppressHydrationWarning: browser extensions (clipboard helpers etc.)
+          inject attributes onto <body> before React hydrates. */}
+      <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <header className="border-b border-rule-strong bg-raised/80 backdrop-blur sticky top-0 z-20">
           <div className="mx-auto flex w-full max-w-[1440px] items-center gap-6 px-6 py-3.5">
             <Link href="/" className="flex items-center gap-2 focus-ring">
-              <img src='logo.jpeg' className="w-6 h-6 border" />
+              <img src="logo.jpeg" alt="" className="w-6 h-6 border" />
                 
               <span className="text-sm font-semibold tracking-tight">JOBDESK</span>
               <span className="meta hidden sm:inline">Notebook</span>

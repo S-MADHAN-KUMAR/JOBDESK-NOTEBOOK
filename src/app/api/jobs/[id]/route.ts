@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { deleteJob, updateJob } from "@/lib/jobs";
+import { apiGuard } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,9 @@ const patchSchema = z
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function PATCH(request: Request, ctx: RouteContext<"/api/jobs/[id]">) {
+  const denied = await apiGuard();
+  if (denied) return denied;
+
   const { id } = await ctx.params;
 
   if (!UUID_RE.test(id)) {
@@ -53,6 +57,9 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/jobs/[id]"
 }
 
 export async function DELETE(_request: Request, ctx: RouteContext<"/api/jobs/[id]">) {
+  const denied = await apiGuard();
+  if (denied) return denied;
+
   const { id } = await ctx.params;
 
   if (!UUID_RE.test(id)) {

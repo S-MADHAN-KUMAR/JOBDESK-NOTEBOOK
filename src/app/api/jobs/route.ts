@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { createJobs, getStats, listJobs, type JobFilters } from "@/lib/jobs";
+import { apiGuard } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,9 @@ function badRequest(message: string) {
 }
 
 export async function GET(request: Request) {
+  const denied = await apiGuard();
+  if (denied) return denied;
+
   const url = new URL(request.url);
 
   const filters: JobFilters = {
@@ -45,6 +49,9 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const denied = await apiGuard();
+  if (denied) return denied;
+
   let body: unknown;
   try {
     body = await request.json();

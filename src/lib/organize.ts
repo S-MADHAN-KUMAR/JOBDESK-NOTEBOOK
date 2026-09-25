@@ -13,8 +13,9 @@ const nullable = z
 
 const draftSchema = z.object({
   postedDate: nullable.or(z.literal("").transform(() => null)).default(null),
-  role: z.string().transform((s) => s.trim()).pipe(z.string().min(1)),
-  company: z.string().transform((s) => s.trim()).pipe(z.string().min(1)),
+  // Nullable on purpose: one odd row must not void the whole batch.
+  role: nullable.default(null),
+  company: nullable.default(null),
   location: nullable.default(null),
   hrName: nullable.default(null),
   hrPhone: nullable.default(null),
@@ -33,6 +34,9 @@ const MONTHS: Record<string, number> = {
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
+const isoOf = (d: Date) =>
+  `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
 /**
  * Normalise every date the scraper throws at us into `YYYY-MM-DD`.
  * Day-first for slash dates (the dominant convention in IN job boards).
@@ -42,6 +46,30 @@ export function normalizeDate(input: string | null): string | null {
   if (!input) return null;
   const raw = input.trim();
   if (!raw) return null;
+
+  // Relative ages: "8 hours ago", "Posted 2 days ago", "3 hrs ago".
+  // Boards print these in the header line — that IS the posted time.
+  const rel = raw.match(
+    /^(?:posted\s+|posted\s+on\s+|published\s+)?(\d{1,4})\s*(mins?|minutes?|hours?|hrs?|hr|h|days?|weeks?|wks?|months?|years?|yrs?)\s+ago\b/i
+  );
+  if (rel) {
+    const n = Number(rel[1]);
+    const u = rel[2].toLowerCase();
+    const ms = u.startsWith("min")
+      ? n * 60_000
+      : u.startsWith("hour") || u.startsWith("hr") || u === "h"
+        ? n * 3_600_000
+        : u.startsWith("week") || u.startsWith("wk") || u === "w"
+          ? n * 604_800_000
+          : u.startsWith("month")
+            ? n * 2_592_000_000
+            : u.startsWith("year") || u.startsWith("yr")
+              ? n * 31_536_000_000
+              : n * 86_400_000;
+    return isoOf(new Date(Date.now() - ms));
+  }
+  if (/^(?:posted\s+|last\s+)?yesterday\b/i.test(raw)) return isoOf(new Date(Date.now() - 86_400_000));
+  if (/^(?:posted\s+)?(?:today|just now|now)\b/i.test(raw)) return isoOf(new Date());
 
   // 2026-09-18 / 2026/09/18 / 2026.09.18
   let m = raw.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
@@ -91,14 +119,127 @@ export function normalizePhone(input: string | null): string | null {
 function normalizeDraft(d: z.infer<typeof draftSchema>): JobDraft {
   return {
     postedDate: normalizeDate(d.postedDate),
-    role: d.role,
-    company: d.company,
+    role: d.role ?? "",
+    company: d.company ?? "Unknown company",
     location: d.location,
     hrName: d.hrName,
     hrPhone: normalizePhone(d.hrPhone),
     sourceUrl: d.sourceUrl,
     notes: d.notes,
   };
+}
+
+/* ------------------------------------------------------------------ *
+ * Merge pass: one posting must not become two rows.
+ *
+ * Scrapes often print a contact's designation ("Project Manager") next to
+ * their name and phone, then the real vacancy ("React developer") below it.
+ * Models occasionally emit both as separate jobs. Anything that shares a
+ * phone number or a company + contact is the same posting → collapse it.
+ * ------------------------------------------------------------------ */
+
+/** Job-ish words. A role without any of these is probably a person's designation. */
+const JOB_FAMILY =
+  /\b(engineer|developer|designer|analyst|architect|devops|sre|qa|tester|writer|researcher|intern|consultant|specialist|scientist|assistant|executive|recruiter|marketing|sales|representative|officer|nurse|doctor|technician|operator|graduate|trainee|head|lead|architect|chef|cook|driver|teacher|tutor|lawyer|accountant|auditor|engineer)\b/i;
+
+const DESIGNATION_ONLY =
+  /^\s*(project manager|product manager|program manager|business development|hr|human resources|recruiter|hiring|talent|founder|ceo|cto|coordinator|administrator|admin|owner|partner|director|head of|team lead)\b/i;
+
+const digits = (v: string | null) => (v ? v.replace(/\D/g, "") : "");
+const key = (v: string | null) => (v ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+
+function isProbablyDesignation(role: string): boolean {
+  // A known contact title, or a short label with no job-family word.
+  return DESIGNATION_ONLY.test(role) || !JOB_FAMILY.test(role);
+}
+
+/** Prefer the field that says more; otherwise the first non-null wins. */
+function pick<T extends string | null>(a: T, b: T): T {
+  if (!a) return b;
+  if (!b) return a;
+  return (b.length > a.length ? b : a) as T;
+}
+
+function mergePair(a: JobDraft, b: JobDraft): JobDraft {
+  // Which row carries the actual vacancy? The one whose role reads like a job,
+  // or — if both do — the one that is not just a contact card.
+  const aDesignation = isProbablyDesignation(a.role);
+  const bDesignation = isProbablyDesignation(b.role);
+
+  let keep: JobDraft;
+  let drop: JobDraft;
+  if (aDesignation !== bDesignation) {
+    [keep, drop] = aDesignation ? [b, a] : [a, b];
+  } else {
+    const aHasContact = Boolean(a.hrName || a.hrPhone);
+    const bHasContact = Boolean(b.hrName || b.hrPhone);
+    [keep, drop] = aHasContact === bHasContact ? [a, b] : bHasContact ? [b, a] : [a, b];
+  }
+
+  const droppedLabel = key(drop.role) !== key(keep.role) ? drop.role : null;
+  let notes = keep.notes ?? drop.notes ?? null;
+  if (droppedLabel) {
+    notes = notes
+      ? notes.toLowerCase().includes(droppedLabel.toLowerCase())
+        ? notes
+        : `${notes} · ${droppedLabel}`.slice(0, 120)
+      : `Also listed as: ${droppedLabel}`.slice(0, 120);
+  }
+
+  // Locations are often "Kochi, Kerala, India" + "Remote" for the same job.
+  const location =
+    keep.location && drop.location
+      ? key(keep.location) === key(drop.location)
+        ? keep.location
+        : `${keep.location} · ${drop.location}`.slice(0, 160)
+      : (keep.location ?? drop.location);
+
+  return {
+    postedDate: keep.postedDate ?? drop.postedDate,
+    role: keep.role,
+    company: pick(keep.company, drop.company),
+    location,
+    hrName: keep.hrName ?? drop.hrName,
+    hrPhone: keep.hrPhone ?? drop.hrPhone,
+    sourceUrl: keep.sourceUrl ?? drop.sourceUrl,
+    notes,
+  };
+}
+
+function samePosting(a: JobDraft, b: JobDraft): boolean {
+  const [pa, pb] = [digits(a.hrPhone), digits(b.hrPhone)];
+  if (pa && pb && pa === pb) return true; // same contact number → same posting
+
+  const [ca, cb] = [key(a.company), key(b.company)];
+  if (ca && ca === cb) {
+    // Same company: merge when a contact or location is shared, or when one
+    // side is a bare designation card with no vacancy detail of its own.
+    // Same contact person on both rows → same posting.
+    if (a.hrName && b.hrName && key(a.hrName) === key(b.hrName)) return true;
+    // One row is a bare contact-designation card (no date/link of its own) → fold it in.
+    if (isProbablyDesignation(a.role) && !a.postedDate && !a.sourceUrl) return true;
+    if (isProbablyDesignation(b.role) && !b.postedDate && !b.sourceUrl) return true;
+  }
+  return false;
+}
+
+/** Collapse rows that describe one posting. Order-preserving, single pass + repeat. */
+export function mergePostings(drafts: JobDraft[]): JobDraft[] {
+  const out: JobDraft[] = [];
+  for (const draft of drafts) {
+    let merged = false;
+    for (let i = 0; i < out.length; i++) {
+      if (samePosting(out[i], draft)) {
+        out[i] = mergePair(out[i], draft);
+        merged = true;
+        break;
+      }
+    }
+    if (!merged) out.push(draft);
+  }
+  // Merging can expose a new duplicate (A~B, then C~result) — run until stable.
+  if (out.length === drafts.length) return out;
+  return mergePostings(out);
 }
 
 /* ------------------------------------------------------------------ *
@@ -122,21 +263,55 @@ name, the date may be anywhere, and one paste may contain SEVERAL separate jobs.
 
 Extract every distinct job posting you can identify.
 
-Rules:
-- "role" is the job title (e.g. "Senior Frontend Engineer").
-- "company" is the hiring company. Never put the HR person's name here.
+CRITICAL — one posting, one row:
+- Several lines in one block almost always describe the SAME posting. Company,
+  location, contact name, contact designation and phone are context for ONE job,
+  not several jobs.
+- A "designation" (Project Manager, HR Executive, Recruiter, Founder, CEO …)
+  sitting next to a person's name or phone is the CONTACT'S job title, not a
+  vacancy. Never emit it as its own row.
+- Only split the text into two rows when the two rows would have different
+  companies, or different roles at clearly different postings.
+- If the same company appears twice in one paste, merge into one row.
+
+Field rules:
+- "role" is the ACTUAL vacancy being hiring for (e.g. "React developer"). It is
+  not the contact's designation.
+- "company" is the hiring company. Never put a person's name here. If the
+  company is not stated, return the string "Unknown company" — never null.
 - "hrName" is the recruiter / HR contact's personal name, if any is given.
 - "hrPhone" is that contact's phone number exactly as written, keeping the +
   country code. Do not invent one.
 - "location" is the city, state or "Remote" as stated.
-- "postedDate" must be ISO format YYYY-MM-DD. Use null if no date is stated —
-  never guess or use today's date.
+- "postedDate" is when the job was POSTED, ISO format YYYY-MM-DD.
+  - Absolute dates: "25 Sep 2026", "2026-09-25", "25/09/2026".
+  - Relative ages are common in board headers ("India · 8 hours ago · Over 100
+    applicants"). Convert them to a date: "8 hours ago" → today's date minus
+    8 hours; "2 days ago" → today minus 2 days; "yesterday" → today minus 1.
+  - Ignore anything about YOUR application, not the posting: "Application
+    submitted 2 hours ago", "Promoted", "Over 100 applicants", "No response
+    insights". Never use those as postedDate.
+  - If no posting time is stated at all, return null — never guess.
 - "sourceUrl" is a link if one is present, else null.
 - "notes" is a short line for anything worth keeping that fits nowhere else
-  (salary, experience required, shift, contract type). Keep it under 120 chars.
+  (salary, experience required, shift, contract type, the contact's designation).
+  Keep it under 120 chars.
 - Use null for any field that is genuinely absent. Never leave a blank string.
 - Do not drop a job just because it is missing details.
 - If the text contains no job posting at all, return {"jobs":[]}.
+
+Example — the contact's designation must NOT become a second row:
+Input:
+  Project Manager
+  Portable Medical Technology Ltd. (ONCOassist®)
+  Kochi, Kerala, India
+  Subash KB
+  +91 94465 90590
+  React developer
+  Portable Medical Technology Ltd. (ONCOassist®)
+  Remote
+Output:
+  {"jobs":[{"postedDate":null,"role":"React developer","company":"Portable Medical Technology Ltd. (ONCOassist®)","location":"Kochi, Kerala, India · Remote","hrName":"Subash KB","hrPhone":"+91 94465 90590","sourceUrl":null,"notes":"Contact designation: Project Manager"}]}
 
 Return ONLY a JSON object of this exact shape:
 {"jobs":[{"postedDate":"YYYY-MM-DD"|null,"role":"...","company":"...","location":"..."|null,"hrName":"..."|null,"hrPhone":"..."|null,"sourceUrl":"..."|null,"notes":"..."|null}]}`;
@@ -199,7 +374,9 @@ async function organizeWithGroq(rawText: string): Promise<OrganizeResult> {
   const parsed = envelopeSchema.parse(extractJson(content));
 
   return {
-    jobs: parsed.jobs.map(normalizeDraft),
+    jobs: mergePostings(
+      parsed.jobs.map(normalizeDraft).filter((j) => j.role.trim().length > 0)
+    ),
     engine: "groq",
     model: completion.model ?? model,
     usage: completion.usage
@@ -249,7 +426,7 @@ function organizeLocally(rawText: string): OrganizeResult {
     const hrPhone = phoneMatch ? normalizePhone(phoneMatch[0]) : null;
 
     const dateMatch = block.match(
-      /\b(\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2}[-/.]\d{4}|\d{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]{3,9}\.?,?\s+\d{4}|[A-Za-z]{3,9}\.?\s+\d{1,2}(?:st|nd|rd|th)?,?\s+\d{4})\b/
+      /\b(\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2}[-/.]\d{4}|\d{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]{3,9}\.?,?\s+\d{4}|[A-Za-z]{3,9}\.?\s+\d{1,2}(?:st|nd|rd|th)?,?\s+\d{4}|\d{1,4}\s+(?:mins?|minutes?|hours?|hrs?|days?|weeks?|months?|years?)\s+ago|yesterday)\b/
     );
     const postedDate = dateMatch ? normalizeDate(dateMatch[0]) : null;
 
@@ -318,9 +495,10 @@ export async function organize(rawText: string): Promise<OrganizeResult> {
     } catch (err) {
       console.error("[organize] Groq failed, falling back to local parser:", err);
       const fallback = organizeLocally(text);
-      return { ...fallback, model: `fallback after error` };
+      return { ...fallback, jobs: mergePostings(fallback.jobs), model: `fallback after error` };
     }
   }
 
-  return organizeLocally(text);
+  const local = organizeLocally(text);
+  return { ...local, jobs: mergePostings(local.jobs) };
 }

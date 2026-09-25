@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { JobsTable } from "@/components/jobs-table";
 import type { Job, JobStats } from "@/lib/jobs";
 
@@ -26,6 +27,7 @@ type Props = {
 };
 
 export function Dashboard({ initialJobs, initialStats }: Props) {
+  const router = useRouter();
   const [jobs, setJobs] = useState<Job[]>(initialJobs);
   const [stats, setStats] = useState<JobStats>(initialStats);
 
@@ -58,6 +60,15 @@ export function Dashboard({ initialJobs, initialStats }: Props) {
         <div className="flex items-center gap-2">
           <button
             onClick={async () => {
+              await fetch("/api/auth/logout", { method: "POST" });
+              router.push("/login");
+            }}
+            className="h-9 rounded-md border border-rule-strong bg-raised px-3 text-sm text-muted transition-colors hover:text-ink focus-ring"
+          >
+            Sign out
+          </button>
+          <button
+            onClick={async () => {
               const res = await fetch("/api/jobs");
               if (!res.ok) return;
               const data = await res.json();
@@ -68,12 +79,12 @@ export function Dashboard({ initialJobs, initialStats }: Props) {
           >
             Refresh
           </button>
-          <Link
-            href="/seed"
-            className="h-9 rounded-md bg-ink px-3.5 text-sm font-medium text-paper transition-colors hover:bg-accent focus-ring"
-          >
-            + Seed a paste
-          </Link>
+        <Link
+  href="/seed"
+  className="h-9 rounded-md bg-ink px-3.5 text-sm font-medium text-paper transition-colors hover:bg-accent focus-ring text-center flex items-center justify-center"
+>
+  + Seed a paste
+</Link>
         </div>
       </div>
 

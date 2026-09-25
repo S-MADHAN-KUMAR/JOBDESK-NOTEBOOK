@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { organize, hasGroqKey } from "@/lib/organize";
 import { query } from "@/lib/db";
+import { apiGuard } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,9 @@ const bodySchema = z.object({
 });
 
 export async function POST(request: Request) {
+  const denied = await apiGuard();
+  if (denied) return denied;
+
   let body: unknown;
   try {
     body = await request.json();

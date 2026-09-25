@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Dashboard } from "@/components/dashboard";
 import { getStats, listJobs } from "@/lib/jobs";
+import { requireSession } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -44,6 +45,9 @@ function SetupScreen({ message }: { message: string }) {
 }
 
 export default async function Page() {
+  // Auth before anything else — including the database setup screen.
+  await requireSession("/");
+
   let loaded: { jobs: Awaited<ReturnType<typeof listJobs>>; stats: Awaited<ReturnType<typeof getStats>> } | null = null;
   let failure: string | null = null;
 

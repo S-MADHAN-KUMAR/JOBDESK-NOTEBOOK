@@ -224,3 +224,13 @@ export async function deleteJob(id: string): Promise<boolean> {
   const rows = await query<{ id: string }>("DELETE FROM jobs WHERE id = $1 RETURNING id", [id]);
   return rows.length > 0;
 }
+
+/** Bulk delete for the board's multi-select. Returns the ids actually removed. */
+export async function deleteJobs(ids: string[]): Promise<string[]> {
+  if (ids.length === 0) return [];
+  const rows = await query<{ id: string }>(
+    `DELETE FROM jobs WHERE id = ANY($1::uuid[]) RETURNING id`,
+    [ids]
+  );
+  return rows.map((r) => r.id);
+}
