@@ -183,7 +183,7 @@ export function SeedInbox() {
 
   return (
     <div
-      className="mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 sm:py-10"
+      className="mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 sm:py-10 lg:px-8"
       onDragOver={(e) => {
         e.preventDefault();
         setDragging(true);
@@ -193,9 +193,9 @@ export function SeedInbox() {
       }}
       onDrop={handleDrop}
     >
-      <div className="mb-6 max-w-[58ch] sm:mb-8">
+      <div className="accent-band mb-6 max-w-[58ch] rounded-3xl border border-rule px-5 py-6 shadow-card sm:mb-8 sm:px-7 sm:py-7">
         <p className="meta">Seed</p>
-        <h1 className="mt-2 text-2xl leading-tight font-semibold tracking-tight sm:text-4xl">
+        <h1 className="mt-2 text-2xl leading-tight font-semibold tracking-tight sm:text-3xl">
           A blank page.
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-muted">
@@ -240,7 +240,7 @@ export function SeedInbox() {
             <button
               onClick={() => runOrganize(text)}
               disabled={busy || !text.trim()}
-              className="h-9 flex-1 rounded-md bg-ink px-3.5 text-sm font-medium text-paper transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40 focus-ring sm:flex-none"
+              className="h-9 flex-1 rounded-lg bg-accent px-3.5 text-sm font-medium text-white transition-colors hover:bg-accent-ink disabled:cursor-not-allowed disabled:opacity-40 focus-ring sm:flex-none"
             >
               {busy ? "Organising…" : "Organise"}
             </button>
@@ -288,13 +288,13 @@ export function SeedInbox() {
           )}
 
           {error && (
-            <p role="alert" className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            <p role="alert" className="mt-3 rounded-lg border border-red-200 bg-tint-blush px-3 py-2 text-sm text-tint-blush-ink">
               {error}
             </p>
           )}
 
           {saved !== null && (
-            <div className="mt-3 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+            <div className="mt-3 rounded-lg border border-ok/25 bg-tint-sage px-3 py-2 text-sm text-tint-sage-ink">
               Saved {saved} {saved === 1 ? "job" : "jobs"} to the board.{" "}
               <Link href="/" className="font-medium underline underline-offset-2">
                 Open dashboard →
@@ -315,8 +315,8 @@ export function SeedInbox() {
           </div>
 
           {staged.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-rule-strong px-6 py-10 text-center sm:py-14">
-              <p className="text-sm text-muted">
+            <div className="rounded-xl border border-dashed border-rule-strong bg-tint-sand/60 px-6 py-10 text-center sm:py-14">
+              <p className="text-sm font-medium text-ink">
                 {busy ? "Reading your paste…" : "Nothing organised yet."}
               </p>
               <p className="meta mt-2">
@@ -332,7 +332,7 @@ export function SeedInbox() {
                 {staged.map((row) => (
                   <article
                     key={row.key}
-                    className={`min-w-0 rounded-lg border p-4 transition-opacity ${
+                    className={`min-w-0 rounded-xl border p-4 shadow-card transition-opacity ${
                       row.include
                         ? "border-rule bg-raised"
                         : "border-dashed border-rule-strong bg-paper opacity-60"
@@ -376,7 +376,7 @@ export function SeedInbox() {
                       {row.hrPhone ? (
                         <a
                           href={`tel:${row.hrPhone.replace(/[^\d+]/g, "")}`}
-                          className="rounded-md border border-rule-strong px-2 py-1 font-mono text-xs text-accent-ink focus-ring"
+                          className="rounded-lg border border-accent/15 bg-accent-wash px-2.5 py-1 font-mono text-[13px] text-accent-ink transition-colors hover:border-accent/35 focus-ring"
                         >
                           {row.hrPhone}
                         </a>
@@ -388,7 +388,7 @@ export function SeedInbox() {
                 ))}
               </div>
 
-              <div className="scroll-x hidden sm:block">
+              <div className="scroll-x hidden rounded-xl border border-rule bg-raised shadow-card sm:block">
                 <table className="spec-table min-w-[560px]">
                   <thead>
                     <tr>
@@ -433,7 +433,7 @@ export function SeedInbox() {
                           {row.hrPhone ? (
                             <a
                               href={`tel:${row.hrPhone.replace(/[^\d+]/g, "")}`}
-                              className="font-mono text-xs text-accent-ink hover:underline focus-ring"
+                              className="rounded px-1.5 py-0.5 font-mono text-[13px] text-accent-ink transition-colors hover:bg-accent-wash focus-ring"
                             >
                               {row.hrPhone}
                             </a>
@@ -441,7 +441,7 @@ export function SeedInbox() {
                             <p className="font-mono text-xs text-faint">no phone</p>
                           )}
                         </td>
-                        <td className="pr-0 text-right">
+                        <td className="text-right">
                           <button
                             onClick={() => setStaged((prev) => prev.filter((r) => r.key !== row.key))}
                             aria-label={`Remove ${row.role}`}

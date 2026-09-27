@@ -10,22 +10,36 @@
 */
 
 :root {
-  --paper: #fbfbfa;
+  /* Cool blue-grey paper: white cards read as raised against it. */
+  --paper: #f5f7fc;
   --raised: #ffffff;
   --ink: #0b1020;
-  --ink-muted: #5f6672;
-  --ink-faint: #9aa1ad;
-  --rule: #e6e6e3;
-  --rule-strong: #d4d4d0;
+  --ink-muted: #5a6376;
+  --ink-faint: #8a92a6;
+  --rule: #e6eaf4;
+  --rule-strong: #d5dbeb;
 
   --accent: #242cd4;
   --accent-ink: #1a1fa8;
   --accent-wash: #eef0ff;
 
   --ok: #048a4a;
-  --ok-wash: #e6f6ee;
+  --ok-wash: #e7f3ea;
 
   --warn: #f5d312;
+
+  /* Tint set — every wash is blue-family; sage/blush carry status meaning only. */
+  --tint-sand: #eef2fb;
+  --tint-sun: #e7efff;
+  --tint-sun-ink: #1f4bb8;
+  --tint-sage: #e7f3ea;
+  --tint-sage-ink: #1f7a45;
+  --tint-sky: #e4edff;
+  --tint-sky-ink: #1e4fbf;
+  --tint-blush: #fdecea;
+  --tint-blush-ink: #a8342a;
+  --tint-lilac: #e9ecff;
+  --tint-lilac-ink: #3f46c9;
 }
 
 @theme inline {
@@ -43,13 +57,29 @@
   --color-ok-wash: var(--ok-wash);
   --color-warn: var(--warn);
 
+  --color-tint-sand: var(--tint-sand);
+  --color-tint-sun: var(--tint-sun);
+  --color-tint-sun-ink: var(--tint-sun-ink);
+  --color-tint-sage: var(--tint-sage);
+  --color-tint-sage-ink: var(--tint-sage-ink);
+  --color-tint-sky: var(--tint-sky);
+  --color-tint-sky-ink: var(--tint-sky-ink);
+  --color-tint-blush: var(--tint-blush);
+  --color-tint-blush-ink: var(--tint-blush-ink);
+  --color-tint-lilac: var(--tint-lilac);
+  --color-tint-lilac-ink: var(--tint-lilac-ink);
+
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
 @layer base {
   body {
-    background: var(--paper);
+    /* Faint cool wash at the top so the sheet never reads as flat printer paper. */
+    background:
+      radial-gradient(120% 60% at 50% -10%, #eaf1ff 0%, rgba(234, 241, 255, 0) 60%),
+      var(--paper);
+    background-attachment: fixed;
     color: var(--ink);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
@@ -73,6 +103,23 @@
     transition: background-color 120ms ease;
   }
 
+  /* Soft lift for cards sitting on the blue-grey paper. */
+  .shadow-card {
+    box-shadow:
+      0 1px 2px rgba(31, 26, 21, 0.04),
+      0 14px 30px -24px rgba(31, 26, 21, 0.45);
+  }
+
+  /* Header band: a slow blue wash so the top of the app has a temperature. */
+  .accent-band {
+    background-image: linear-gradient(
+      120deg,
+      var(--accent-wash) 0%,
+      #f5f8ff 42%,
+      var(--tint-sky) 100%
+    );
+  }
+
   .row-lift:hover {
     background-color: color-mix(in oklab, var(--ink) 3%, transparent);
   }
@@ -87,8 +134,11 @@
   /* Thin-rule spec-sheet table shared by dashboard + seed preview. */
   .spec-table {
     width: 100%;
-    border-collapse: collapse;
+    /* separate + zero spacing so the tinted header can honour the card's radius. */
+    border-collapse: separate;
+    border-spacing: 0;
     font-size: 0.875rem;
+    background-color: var(--raised);
   }
 
   .spec-table th {
@@ -97,17 +147,44 @@
     letter-spacing: 0.08em;
     text-transform: uppercase;
     font-weight: 400;
-    color: var(--ink-faint);
+    color: var(--ink-muted);
     text-align: left;
-    padding: 0.75rem 1rem 0.75rem 0;
+    padding: 0.75rem 1.25rem 0.75rem 0;
     border-bottom: 1px solid var(--rule-strong);
     white-space: nowrap;
+    background-color: var(--tint-sand);
+  }
+
+  /* Edge columns get an inset so nothing touches the card border. */
+  .spec-table th:first-child {
+    padding-left: 1.25rem;
+    border-top-left-radius: 11px;
+    border-bottom-left-radius: 11px;
+  }
+
+  .spec-table th:last-child {
+    padding-right: 1.25rem;
+    border-top-right-radius: 11px;
+    border-bottom-right-radius: 11px;
   }
 
   .spec-table td {
-    padding: 0.875rem 1rem 0.875rem 0;
+    padding: 1rem 1.25rem 1rem 0;
     border-bottom: 1px solid var(--rule);
     vertical-align: top;
+  }
+
+  .spec-table td:first-child {
+    padding-left: 1.25rem;
+  }
+
+  .spec-table td:last-child {
+    padding-right: 1.25rem;
+  }
+
+  /* Every row but the last keeps its rule; the card border closes the table. */
+  .spec-table tbody tr:last-child td {
+    border-bottom: 0;
   }
 
   /* iOS momentum scroll for wide tables. */
@@ -118,7 +195,7 @@
   }
 }
 
-/* Tighten the spec-sheet table on small screens so scrolled columns stay legible. */
+/* Keep the scrolled columns legible on small screens. */
 @media (max-width: 767px) {
   .spec-table {
     font-size: 0.8125rem;
@@ -130,5 +207,15 @@
 
   .spec-table td {
     padding: 0.75rem 0.75rem 0.75rem 0;
+  }
+
+  .spec-table th:first-child,
+  .spec-table td:first-child {
+    padding-left: 0.875rem;
+  }
+
+  .spec-table th:last-child,
+  .spec-table td:last-child {
+    padding-right: 0.875rem;
   }
 }

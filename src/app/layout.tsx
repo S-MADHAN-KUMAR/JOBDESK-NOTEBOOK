@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import { hasGroqKey, DEFAULT_MODEL } from "@/lib/organize";
+import { SignOutButton } from "@/components/sign-out-button";
+import { NavLinks } from "@/components/nav-links";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -46,39 +48,29 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       {/* suppressHydrationWarning: browser extensions (clipboard helpers etc.)
           inject attributes onto <body> before React hydrates. */}
       <body className="min-h-full flex flex-col overflow-x-hidden" suppressHydrationWarning>
-        <header className="border-b border-rule-strong bg-raised/80 backdrop-blur sticky top-0 z-20">
-          <div className="mx-auto flex w-full max-w-[1440px] flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 sm:gap-6 sm:px-6 sm:py-3.5">
-            <Link href="/" className="flex min-w-0 items-center gap-2 focus-ring">
+        <header className="sticky top-0 z-20 border-b border-rule-strong bg-paper/85 backdrop-blur">
+          <div className="mx-auto flex w-full max-w-[1440px] items-center gap-x-2 px-4 py-3 sm:gap-x-6 sm:px-6 sm:py-3.5">
+            <Link href="/" className="flex min-w-0 flex-1 items-center gap-2 focus-ring">
               <img src="logo.jpeg" alt="" className="h-6 w-6 shrink-0 border" />
 
               <span className="truncate text-sm font-semibold tracking-tight">JOBDESK</span>
               <span className="meta hidden sm:inline">Notebook</span>
             </Link>
 
-            <nav className="flex items-center gap-1 text-sm">
-              <Link
-                href="/"
-                className="rounded-md px-2 py-1.5 text-muted transition-colors hover:bg-[color-mix(in_oklab,var(--ink)_4%,transparent)] hover:text-ink focus-ring sm:px-2.5"
-              >
-                Dashboard
-              </Link>
-              <Link
-                href="/seed"
-                className="rounded-md px-2 py-1.5 text-muted transition-colors hover:bg-[color-mix(in_oklab,var(--ink)_4%,transparent)] hover:text-ink focus-ring sm:px-2.5"
-              >
-                Seed
-              </Link>
-            </nav>
+            <NavLinks />
 
-            <div className="ml-auto hidden items-center md:flex">
-              <NavStatus />
+            <div className="flex flex-1 items-center justify-end gap-3">
+              <span className="hidden md:flex">
+                <NavStatus />
+              </span>
+              <SignOutButton />
             </div>
           </div>
         </header>
 
         <main className="min-w-0 flex-1">{children}</main>
 
-        <footer className="border-t border-rule">
+        <footer className="border-t border-rule bg-tint-sand/60">
           <div className="mx-auto flex w-full max-w-[1440px] flex-wrap items-center gap-x-4 gap-y-1 px-4 py-4 sm:px-6 sm:py-5">
             <span className="meta">Jobdesk Notebook</span>
             <span className="meta">Single user · local-first</span>

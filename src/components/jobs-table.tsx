@@ -25,6 +25,27 @@ function initials(name: string): string {
     .join("");
 }
 
+/** Soft per-contact avatar tints — a little colour rhythm down the HR column. */
+const AVATAR_TONES = [
+  "bg-accent-wash text-accent-ink",
+  "bg-tint-sun text-tint-sun-ink",
+  "bg-tint-sage text-tint-sage-ink",
+  "bg-tint-lilac text-tint-lilac-ink",
+  "bg-tint-blush text-tint-blush-ink",
+];
+
+function avatarTone(name: string): string {
+  let h = 0;
+  for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) % 997;
+  return AVATAR_TONES[h % AVATAR_TONES.length];
+}
+
+/** Status pills: green for reached, blue for still-to-call. */
+const reachPill = (reached: boolean) =>
+  reached
+    ? "border-transparent bg-tint-sage text-tint-sage-ink"
+    : "border-transparent bg-tint-sun text-tint-sun-ink";
+
 /** Editable copy of a row — every field the PATCH endpoint accepts. */
 type Draft = {
   postedDate: string;
@@ -253,7 +274,7 @@ export function JobsTable({ jobs, onChanged }: Props) {
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search role, company, HR, phone…"
             aria-label="Search jobs"
-            className="h-9 w-full rounded-md border border-rule-strong bg-raised pr-3 pl-8 text-sm placeholder:text-faint focus-ring sm:w-[19rem]"
+            className="h-9 w-full rounded-lg border border-rule-strong bg-raised px-3 pl-8 text-sm shadow-card placeholder:text-faint focus-ring sm:w-[19rem]"
           />
           <svg
             aria-hidden
@@ -268,16 +289,16 @@ export function JobsTable({ jobs, onChanged }: Props) {
           </svg>
         </div>
 
-        <div className="flex items-center gap-1 self-start overflow-x-auto rounded-md border border-rule-strong bg-raised p-0.5 max-w-full">
+        <div className="flex items-center gap-1 self-start overflow-x-auto rounded-lg border border-rule-strong bg-raised p-1 shadow-card max-w-full">
           {filters.map((f) => (
             <button
               key={f.key}
               onClick={() => startTransition(() => setReach(f.key))}
               aria-pressed={reach === f.key}
-              className={`shrink-0 rounded px-2.5 py-1.5 text-xs transition-colors focus-ring ${
+              className={`shrink-0 rounded-md px-2.5 py-1.5 text-xs transition-colors focus-ring ${
                 reach === f.key
-                  ? "bg-ink text-paper"
-                  : "text-muted hover:bg-[color-mix(in_oklab,var(--ink)_4%,transparent)]"
+                  ? "bg-accent text-white"
+                  : "text-muted hover:bg-tint-sand hover:text-ink"
               }`}
             >
               {f.label}
@@ -316,7 +337,7 @@ export function JobsTable({ jobs, onChanged }: Props) {
       )}
 
       {error && (
-        <p role="alert" className="mb-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p role="alert" className="mb-3 rounded-lg border border-red-200 bg-tint-blush px-3 py-2 text-sm text-tint-blush-ink">
           {error}
         </p>
       )}
@@ -324,8 +345,8 @@ export function JobsTable({ jobs, onChanged }: Props) {
       {/* Mobile cards — shown below md. The wide spec table stays for md+. */}
       <div className="space-y-3 md:hidden">
         {visible.length === 0 && (
-          <div className="rounded-lg border border-dashed border-rule-strong px-6 py-12 text-center">
-            <p className="text-sm text-muted">
+          <div className="rounded-xl border border-dashed border-rule-strong bg-tint-sand/60 px-6 py-12 text-center">
+            <p className="text-sm font-medium text-ink">
               {jobs.length === 0 ? "No jobs yet." : "Nothing matches that filter."}
             </p>
             <p className="meta mt-2">
@@ -342,7 +363,7 @@ export function JobsTable({ jobs, onChanged }: Props) {
               <article
                 key={job.id}
                 aria-busy={savingEdit}
-                className="min-w-0 rounded-lg border border-accent bg-[color-mix(in_oklab,var(--accent)_4%,transparent)] p-4"
+                className="min-w-0 rounded-xl border border-accent bg-accent-wash/60 p-4 shadow-card"
               >
                 <div className="grid gap-3">
                   <label className="block min-w-0">
@@ -430,7 +451,7 @@ export function JobsTable({ jobs, onChanged }: Props) {
                     <button
                       onClick={() => saveEdit(job)}
                       disabled={savingEdit}
-                      className="h-9 flex-1 rounded-md bg-ink px-2.5 text-sm font-medium text-paper transition-colors hover:bg-accent disabled:opacity-40 focus-ring"
+                      className="h-9 flex-1 rounded-lg bg-accent px-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-ink disabled:opacity-40 focus-ring"
                     >
                       {savingEdit ? "Saving…" : "Save"}
                     </button>
@@ -451,7 +472,7 @@ export function JobsTable({ jobs, onChanged }: Props) {
             <article
               key={job.id}
               aria-busy={pendingId === job.id}
-              className="min-w-0 rounded-lg border border-rule bg-raised p-4"
+              className="min-w-0 rounded-xl border border-rule bg-raised p-4 shadow-card"
             >
               <div className="flex items-start gap-3">
                 <input
@@ -462,7 +483,7 @@ export function JobsTable({ jobs, onChanged }: Props) {
                   className="mt-1 size-4 shrink-0 accent-[var(--accent)] focus-ring"
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[15px] font-medium text-ink">{job.role}</p>
+                  <p className="truncate text-base font-medium text-ink">{job.role}</p>
                   <p className="mt-0.5 truncate text-sm text-muted">{job.company}</p>
                   <p className="meta mt-1.5">
                     {formatDate(job.postedDate)}
@@ -470,11 +491,7 @@ export function JobsTable({ jobs, onChanged }: Props) {
                   </p>
                 </div>
                 <span
-                  className={`meta shrink-0 rounded-full border px-2 py-1 ${
-                    job.reached
-                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                      : "border-rule-strong bg-paper text-faint"
-                  }`}
+                  className={`meta shrink-0 rounded-full border px-2.5 py-1 ${reachPill(job.reached)}`}
                 >
                   {job.reached ? "Reached" : "Not yet"}
                 </span>
@@ -486,19 +503,19 @@ export function JobsTable({ jobs, onChanged }: Props) {
                     <>
                       <span
                         aria-hidden
-                        className="grid size-6 shrink-0 place-items-center rounded-full bg-accent-wash font-mono text-[10px] text-accent-ink"
+                        className={`grid size-7 shrink-0 place-items-center rounded-full font-mono text-[11px] ${avatarTone(job.hrName)}`}
                       >
                         {initials(job.hrName)}
                       </span>
-                      <span className="min-w-0 flex-1 truncate text-sm text-ink">{job.hrName}</span>
+                      <span className="min-w-0 flex-1 truncate text-[15px] text-ink">{job.hrName}</span>
                     </>
                   ) : (
-                    <span className="min-w-0 flex-1 text-sm text-faint">No HR name</span>
+                    <span className="min-w-0 flex-1 text-[15px] text-faint">No HR name</span>
                   )}
                   {job.hrPhone && (
                     <a
                       href={telHref(job.hrPhone)}
-                      className="shrink-0 rounded-md border border-rule-strong px-2 py-1 font-mono text-xs text-accent-ink focus-ring"
+                      className="shrink-0 rounded-lg border border-accent/15 bg-accent-wash px-2.5 py-1.5 font-mono text-[13px] text-accent-ink transition-colors hover:border-accent/35 focus-ring"
                     >
                       {job.hrPhone}
                     </a>
@@ -545,7 +562,7 @@ export function JobsTable({ jobs, onChanged }: Props) {
         })}
       </div>
 
-      <div className="scroll-x hidden md:block">
+      <div className="scroll-x hidden rounded-xl border border-rule bg-raised shadow-card md:block">
         <table className="spec-table min-w-[1100px]">
           <thead>
             <tr>
@@ -574,7 +591,7 @@ export function JobsTable({ jobs, onChanged }: Props) {
             {visible.length === 0 && (
               <tr>
                 <td colSpan={10} className="py-16 text-center">
-                  <p className="text-sm text-muted">
+                  <p className="text-sm font-medium text-ink">
                     {jobs.length === 0 ? "No jobs yet." : "Nothing matches that filter."}
                   </p>
                   <p className="meta mt-2">
@@ -669,7 +686,7 @@ export function JobsTable({ jobs, onChanged }: Props) {
                       <button
                         onClick={() => saveEdit(job)}
                         disabled={savingEdit}
-                        className="h-8 rounded-md bg-ink px-2.5 text-xs font-medium text-paper transition-colors hover:bg-accent disabled:opacity-40 focus-ring"
+                        className="h-8 rounded-lg bg-accent px-2.5 text-xs font-medium text-white transition-colors hover:bg-accent-ink disabled:opacity-40 focus-ring"
                       >
                         {savingEdit ? "Saving…" : "Save"}
                       </button>
@@ -705,7 +722,7 @@ export function JobsTable({ jobs, onChanged }: Props) {
                     {formatDate(job.postedDate)}
                   </td>
 
-                  <td className="font-medium text-ink">{job.role}</td>
+                  <td className="text-[15px] font-medium text-ink">{job.role}</td>
 
                   <td className="text-ink">{job.company}</td>
 
@@ -718,11 +735,11 @@ export function JobsTable({ jobs, onChanged }: Props) {
                       <span className="flex items-center gap-2">
                         <span
                           aria-hidden
-                          className="grid size-6 shrink-0 place-items-center rounded-full bg-accent-wash font-mono text-[10px] text-accent-ink"
+                          className={`grid size-7 shrink-0 place-items-center rounded-full font-mono text-[11px] ${avatarTone(job.hrName)}`}
                         >
                           {initials(job.hrName)}
                         </span>
-                        <span className="text-ink">{job.hrName}</span>
+                        <span className="text-[15px] text-ink">{job.hrName}</span>
                       </span>
                     ) : (
                       <span className="text-faint">—</span>
@@ -733,7 +750,7 @@ export function JobsTable({ jobs, onChanged }: Props) {
                     {job.hrPhone ? (
                       <a
                         href={telHref(job.hrPhone)}
-                        className="font-mono text-xs text-accent-ink underline-offset-2 hover:underline focus-ring"
+                        className="rounded px-1.5 py-0.5 font-mono text-[13px] text-accent-ink transition-colors hover:bg-accent-wash focus-ring"
                       >
                         {job.hrPhone}
                       </a>
@@ -755,14 +772,14 @@ export function JobsTable({ jobs, onChanged }: Props) {
                         className="size-4 cursor-pointer accent-[var(--accent)] focus-ring"
                       />
                       <span
-                        className={`meta ${job.reached ? "text-ok" : "text-faint"}`}
+                        className={`meta rounded-full border px-2 py-1 ${reachPill(job.reached)}`}
                       >
                         {job.reached ? "Reached" : "Not yet"}
                       </span>
                     </label>
                   </td>
 
-                  <td className="pr-0 text-right">
+                  <td className="text-right">
                     <span className="inline-flex items-center gap-1">
                       <button
                         onClick={() => startEdit(job)}
