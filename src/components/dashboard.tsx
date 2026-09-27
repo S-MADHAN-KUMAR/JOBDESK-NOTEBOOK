@@ -8,10 +8,10 @@ import type { Job, JobStats } from "@/lib/jobs";
 
 function Stat({ label, value, tone }: { label: string; value: number; tone?: "ok" | "accent" }) {
   return (
-    <div className="min-w-0 border-l border-rule pl-4 first:border-l-0 first:pl-0">
-      <p className="meta">{label}</p>
+    <div className="min-w-0 border-l border-rule pl-3 first:border-l-0 first:pl-0 sm:pl-4">
+      <p className="meta truncate">{label}</p>
       <p
-        className={`mt-1.5 font-mono text-2xl leading-none tabular-nums ${
+        className={`mt-1.5 font-mono text-xl leading-none tabular-nums sm:text-2xl ${
           tone === "ok" ? "text-ok" : tone === "accent" ? "text-accent-ink" : "text-ink"
         }`}
       >
@@ -44,11 +44,11 @@ export function Dashboard({ initialJobs, initialStats }: Props) {
   }, [jobs, stats]);
 
   return (
-    <div className="mx-auto w-full max-w-[1440px] px-6 py-10">
-      <div className="mb-8 flex flex-wrap items-end justify-between gap-6">
+    <div className="mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 sm:py-10">
+      <div className="mb-6 flex flex-col gap-5 sm:mb-8 lg:flex-row lg:flex-wrap lg:items-end lg:justify-between lg:gap-6">
         <div className="min-w-0">
           <p className="meta">Board</p>
-          <h1 className="mt-2 text-3xl leading-tight font-semibold tracking-tight sm:text-4xl">
+          <h1 className="mt-2 text-2xl leading-tight font-semibold tracking-tight sm:text-3xl lg:text-4xl">
             Every lead, in one sheet.
           </h1>
           <p className="mt-3 max-w-[58ch] text-sm leading-relaxed text-muted">
@@ -57,7 +57,7 @@ export function Dashboard({ initialJobs, initialStats }: Props) {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
           <button
             onClick={async () => {
               await fetch("/api/auth/logout", { method: "POST" });
@@ -81,14 +81,14 @@ export function Dashboard({ initialJobs, initialStats }: Props) {
           </button>
         <Link
   href="/seed"
-  className="h-9 rounded-md bg-ink px-3.5 text-sm font-medium text-paper transition-colors hover:bg-accent focus-ring text-center flex items-center justify-center"
+  className="col-span-2 h-9 rounded-md bg-ink px-3.5 text-sm font-medium text-paper transition-colors hover:bg-accent focus-ring text-center flex items-center justify-center sm:col-span-1"
 >
   + Seed a paste
 </Link>
         </div>
       </div>
 
-      <div className="mb-8 grid grid-cols-2 gap-y-6 border-y border-rule-strong py-5 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="mb-6 grid grid-cols-2 gap-x-4 gap-y-6 border-y border-rule-strong py-5 sm:mb-8 sm:grid-cols-3 lg:grid-cols-5">
         <Stat label="Total jobs" value={live.total} />
         <Stat label="Reached" value={live.reached} tone="ok" />
         <Stat label="Not reached" value={live.notReached} tone="accent" />

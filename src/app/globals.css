@@ -109,4 +109,26 @@
     border-bottom: 1px solid var(--rule);
     vertical-align: top;
   }
+
+  /* iOS momentum scroll for wide tables. */
+  .scroll-x {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+}
+
+/* Tighten the spec-sheet table on small screens so scrolled columns stay legible. */
+@media (max-width: 767px) {
+  .spec-table {
+    font-size: 0.8125rem;
+  }
+
+  .spec-table th {
+    padding: 0.625rem 0.75rem 0.625rem 0;
+  }
+
+  .spec-table td {
+    padding: 0.75rem 0.75rem 0.75rem 0;
+  }
 }

@@ -7,9 +7,9 @@ export const dynamic = "force-dynamic";
 
 function SetupScreen({ message }: { message: string }) {
   return (
-    <div className="mx-auto w-full max-w-[720px] px-6 py-16">
+    <div className="mx-auto w-full max-w-[720px] px-4 py-10 sm:px-6 sm:py-16">
       <p className="meta">Setup</p>
-      <h1 className="mt-2 text-3xl leading-tight font-semibold tracking-tight">
+      <h1 className="mt-2 text-2xl leading-tight font-semibold tracking-tight sm:text-3xl">
         Connect your database.
       </h1>
       <p className="mt-4 text-sm leading-relaxed text-muted">{message}</p>

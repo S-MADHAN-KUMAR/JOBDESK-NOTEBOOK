@@ -45,26 +45,26 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       {/* suppressHydrationWarning: browser extensions (clipboard helpers etc.)
           inject attributes onto <body> before React hydrates. */}
-      <body className="min-h-full flex flex-col" suppressHydrationWarning>
+      <body className="min-h-full flex flex-col overflow-x-hidden" suppressHydrationWarning>
         <header className="border-b border-rule-strong bg-raised/80 backdrop-blur sticky top-0 z-20">
-          <div className="mx-auto flex w-full max-w-[1440px] items-center gap-6 px-6 py-3.5">
-            <Link href="/" className="flex items-center gap-2 focus-ring">
-              <img src="logo.jpeg" alt="" className="w-6 h-6 border" />
-                
-              <span className="text-sm font-semibold tracking-tight">JOBDESK</span>
+          <div className="mx-auto flex w-full max-w-[1440px] flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 sm:gap-6 sm:px-6 sm:py-3.5">
+            <Link href="/" className="flex min-w-0 items-center gap-2 focus-ring">
+              <img src="logo.jpeg" alt="" className="h-6 w-6 shrink-0 border" />
+
+              <span className="truncate text-sm font-semibold tracking-tight">JOBDESK</span>
               <span className="meta hidden sm:inline">Notebook</span>
             </Link>
 
             <nav className="flex items-center gap-1 text-sm">
               <Link
                 href="/"
-                className="rounded-md px-2.5 py-1.5 text-muted transition-colors hover:bg-[color-mix(in_oklab,var(--ink)_4%,transparent)] hover:text-ink focus-ring"
+                className="rounded-md px-2 py-1.5 text-muted transition-colors hover:bg-[color-mix(in_oklab,var(--ink)_4%,transparent)] hover:text-ink focus-ring sm:px-2.5"
               >
                 Dashboard
               </Link>
               <Link
                 href="/seed"
-                className="rounded-md px-2.5 py-1.5 text-muted transition-colors hover:bg-[color-mix(in_oklab,var(--ink)_4%,transparent)] hover:text-ink focus-ring"
+                className="rounded-md px-2 py-1.5 text-muted transition-colors hover:bg-[color-mix(in_oklab,var(--ink)_4%,transparent)] hover:text-ink focus-ring sm:px-2.5"
               >
                 Seed
               </Link>
@@ -76,10 +76,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           </div>
         </header>
 
-        <main className="flex-1">{children}</main>
+        <main className="min-w-0 flex-1">{children}</main>
 
         <footer className="border-t border-rule">
-          <div className="mx-auto flex w-full max-w-[1440px] flex-wrap items-center gap-x-4 gap-y-1 px-6 py-5">
+          <div className="mx-auto flex w-full max-w-[1440px] flex-wrap items-center gap-x-4 gap-y-1 px-4 py-4 sm:px-6 sm:py-5">
             <span className="meta">Jobdesk Notebook</span>
             <span className="meta">Single user · local-first</span>
           </div>

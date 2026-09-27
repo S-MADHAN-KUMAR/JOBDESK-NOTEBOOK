@@ -246,14 +246,14 @@ export function JobsTable({ jobs, onChanged }: Props) {
 
   return (
     <section aria-label="Jobs">
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        <div className="relative">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="relative w-full sm:w-auto">
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search role, company, HR, phone…"
             aria-label="Search jobs"
-            className="h-9 w-[min(19rem,70vw)] rounded-md border border-rule-strong bg-raised pr-3 pl-8 text-sm placeholder:text-faint focus-ring"
+            className="h-9 w-full rounded-md border border-rule-strong bg-raised pr-3 pl-8 text-sm placeholder:text-faint focus-ring sm:w-[19rem]"
           />
           <svg
             aria-hidden
@@ -268,13 +268,13 @@ export function JobsTable({ jobs, onChanged }: Props) {
           </svg>
         </div>
 
-        <div className="flex items-center gap-1 rounded-md border border-rule-strong bg-raised p-0.5">
+        <div className="flex items-center gap-1 self-start overflow-x-auto rounded-md border border-rule-strong bg-raised p-0.5 max-w-full">
           {filters.map((f) => (
             <button
               key={f.key}
               onClick={() => startTransition(() => setReach(f.key))}
               aria-pressed={reach === f.key}
-              className={`rounded px-2.5 py-1.5 text-xs transition-colors focus-ring ${
+              className={`shrink-0 rounded px-2.5 py-1.5 text-xs transition-colors focus-ring ${
                 reach === f.key
                   ? "bg-ink text-paper"
                   : "text-muted hover:bg-[color-mix(in_oklab,var(--ink)_4%,transparent)]"
@@ -288,13 +288,13 @@ export function JobsTable({ jobs, onChanged }: Props) {
           ))}
         </div>
 
-        <p className="meta ml-auto">
+        <p className="meta sm:ml-auto">
           {visible.length} of {jobs.length} shown
         </p>
       </div>
 
       {selected.size > 0 && (
-        <div className="mb-3 flex flex-wrap items-center gap-3 rounded-md border border-accent bg-accent-wash px-3 py-2">
+        <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-md border border-accent bg-accent-wash px-3 py-2">
           <p className="meta text-accent-ink">
             {selected.size} selected
           </p>
@@ -308,7 +308,7 @@ export function JobsTable({ jobs, onChanged }: Props) {
           <button
             onClick={bulkDelete}
             disabled={bulkPending}
-            className="ml-auto h-8 rounded-md bg-red-600 px-3 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-40 focus-ring"
+            className="ml-auto h-8 w-full rounded-md bg-red-600 px-3 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-40 focus-ring sm:w-auto"
           >
             {bulkPending ? "Deleting…" : `Delete ${selected.size} ${selected.size === 1 ? "row" : "rows"}`}
           </button>
@@ -321,7 +321,231 @@ export function JobsTable({ jobs, onChanged }: Props) {
         </p>
       )}
 
-      <div className="overflow-x-auto">
+      {/* Mobile cards — shown below md. The wide spec table stays for md+. */}
+      <div className="space-y-3 md:hidden">
+        {visible.length === 0 && (
+          <div className="rounded-lg border border-dashed border-rule-strong px-6 py-12 text-center">
+            <p className="text-sm text-muted">
+              {jobs.length === 0 ? "No jobs yet." : "Nothing matches that filter."}
+            </p>
+            <p className="meta mt-2">
+              {jobs.length === 0 ? "Paste your first posting on the Seed page" : "Try a different search"}
+            </p>
+          </div>
+        )}
+
+        {visible.map((job) => {
+          const editing = editingId === job.id && draft !== null;
+
+          if (editing) {
+            return (
+              <article
+                key={job.id}
+                aria-busy={savingEdit}
+                className="min-w-0 rounded-lg border border-accent bg-[color-mix(in_oklab,var(--accent)_4%,transparent)] p-4"
+              >
+                <div className="grid gap-3">
+                  <label className="block min-w-0">
+                    <span className="meta">Posted</span>
+                    <input
+                      type="date"
+                      value={draft.postedDate}
+                      onChange={(e) => setDraft({ ...draft, postedDate: e.target.value })}
+                      aria-label="Posted date"
+                      className={`${cellInput} mt-1.5 font-mono text-xs tabular-nums`}
+                    />
+                  </label>
+                  <label className="block min-w-0">
+                    <span className="meta">Role</span>
+                    <input
+                      value={draft.role}
+                      onChange={(e) => setDraft({ ...draft, role: e.target.value })}
+                      aria-label="Role"
+                      className={`${cellInput} mt-1.5 font-medium`}
+                    />
+                  </label>
+                  <label className="block min-w-0">
+                    <span className="meta">Company</span>
+                    <input
+                      value={draft.company}
+                      onChange={(e) => setDraft({ ...draft, company: e.target.value })}
+                      aria-label="Company"
+                      className={`${cellInput} mt-1.5`}
+                    />
+                  </label>
+                  <label className="block min-w-0">
+                    <span className="meta">Location</span>
+                    <input
+                      value={draft.location}
+                      onChange={(e) => setDraft({ ...draft, location: e.target.value })}
+                      aria-label="Location"
+                      placeholder="—"
+                      className={`${cellInput} mt-1.5`}
+                    />
+                  </label>
+                  <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
+                    <label className="block min-w-0">
+                      <span className="meta">HR name</span>
+                      <input
+                        value={draft.hrName}
+                        onChange={(e) => setDraft({ ...draft, hrName: e.target.value })}
+                        aria-label="HR name"
+                        placeholder="—"
+                        className={`${cellInput} mt-1.5`}
+                      />
+                    </label>
+                    <label className="block min-w-0">
+                      <span className="meta">HR phone</span>
+                      <input
+                        value={draft.hrPhone}
+                        onChange={(e) => setDraft({ ...draft, hrPhone: e.target.value })}
+                        aria-label="HR phone"
+                        placeholder="—"
+                        className={`${cellInput} mt-1.5 font-mono text-xs`}
+                      />
+                    </label>
+                  </div>
+                  <label className="block min-w-0">
+                    <span className="meta">Notes</span>
+                    <input
+                      value={draft.notes}
+                      onChange={(e) => setDraft({ ...draft, notes: e.target.value })}
+                      aria-label="Notes"
+                      placeholder="notes"
+                      className={`${cellInput} mt-1.5`}
+                    />
+                  </label>
+                  <label className="inline-flex cursor-pointer items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={job.reached}
+                      onChange={() => toggleReached(job)}
+                      className="size-4 cursor-pointer accent-[var(--accent)] focus-ring"
+                    />
+                    <span className={`meta ${job.reached ? "text-ok" : "text-faint"}`}>
+                      {job.reached ? "Reached" : "Not yet"}
+                    </span>
+                  </label>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => saveEdit(job)}
+                      disabled={savingEdit}
+                      className="h-9 flex-1 rounded-md bg-ink px-2.5 text-sm font-medium text-paper transition-colors hover:bg-accent disabled:opacity-40 focus-ring"
+                    >
+                      {savingEdit ? "Saving…" : "Save"}
+                    </button>
+                    <button
+                      onClick={cancelEdit}
+                      disabled={savingEdit}
+                      className="h-9 flex-1 rounded-md border border-rule-strong bg-raised px-2.5 text-sm text-muted transition-colors hover:text-ink disabled:opacity-40 focus-ring"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </article>
+            );
+          }
+
+          return (
+            <article
+              key={job.id}
+              aria-busy={pendingId === job.id}
+              className="min-w-0 rounded-lg border border-rule bg-raised p-4"
+            >
+              <div className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  checked={selected.has(job.id)}
+                  onChange={() => toggleSelect(job.id)}
+                  aria-label={`Select ${job.role} at ${job.company}`}
+                  className="mt-1 size-4 shrink-0 accent-[var(--accent)] focus-ring"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[15px] font-medium text-ink">{job.role}</p>
+                  <p className="mt-0.5 truncate text-sm text-muted">{job.company}</p>
+                  <p className="meta mt-1.5">
+                    {formatDate(job.postedDate)}
+                    {job.location ? ` · ${job.location}` : ""}
+                  </p>
+                </div>
+                <span
+                  className={`meta shrink-0 rounded-full border px-2 py-1 ${
+                    job.reached
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                      : "border-rule-strong bg-paper text-faint"
+                  }`}
+                >
+                  {job.reached ? "Reached" : "Not yet"}
+                </span>
+              </div>
+
+              {(job.hrName || job.hrPhone) && (
+                <div className="mt-3 flex items-center gap-2 border-t border-rule pt-3">
+                  {job.hrName ? (
+                    <>
+                      <span
+                        aria-hidden
+                        className="grid size-6 shrink-0 place-items-center rounded-full bg-accent-wash font-mono text-[10px] text-accent-ink"
+                      >
+                        {initials(job.hrName)}
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-sm text-ink">{job.hrName}</span>
+                    </>
+                  ) : (
+                    <span className="min-w-0 flex-1 text-sm text-faint">No HR name</span>
+                  )}
+                  {job.hrPhone && (
+                    <a
+                      href={telHref(job.hrPhone)}
+                      className="shrink-0 rounded-md border border-rule-strong px-2 py-1 font-mono text-xs text-accent-ink focus-ring"
+                    >
+                      {job.hrPhone}
+                    </a>
+                  )}
+                </div>
+              )}
+
+              {job.notes && (
+                <p className="mt-3 line-clamp-3 border-t border-rule pt-3 text-xs leading-relaxed text-muted">
+                  {job.notes}
+                </p>
+              )}
+
+              <div className="mt-3 flex items-center gap-2 border-t border-rule pt-3">
+                <label className="inline-flex cursor-pointer items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={job.reached}
+                    onChange={() => toggleReached(job)}
+                    aria-label={`Mark ${job.role} as reached`}
+                    className="size-4 cursor-pointer accent-[var(--accent)] focus-ring"
+                  />
+                  <span className="text-xs text-muted">Reached</span>
+                </label>
+                <span className="ml-auto inline-flex items-center gap-1">
+                  <button
+                    onClick={() => startEdit(job)}
+                    aria-label={`Edit ${job.role} at ${job.company}`}
+                    className="rounded-md border border-rule-strong px-2.5 py-1.5 text-xs text-muted transition-colors hover:text-ink focus-ring"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => remove(job)}
+                    aria-label={`Delete ${job.role} at ${job.company}`}
+                    className="rounded-md border border-rule-strong px-2.5 py-1.5 text-xs text-muted transition-colors hover:border-red-200 hover:text-red-600 focus-ring"
+                  >
+                    Delete
+                  </button>
+                </span>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+
+      <div className="scroll-x hidden md:block">
         <table className="spec-table min-w-[1100px]">
           <thead>
             <tr>
@@ -543,7 +767,7 @@ export function JobsTable({ jobs, onChanged }: Props) {
                       <button
                         onClick={() => startEdit(job)}
                         aria-label={`Edit ${job.role} at ${job.company}`}
-                        className="rounded p-1 text-faint opacity-0 transition-opacity group-hover:opacity-100 hover:bg-[color-mix(in_oklab,var(--ink)_6%,transparent)] hover:text-ink focus-ring focus-visible:opacity-100"
+                        className="rounded p-1 text-faint transition-opacity hover:bg-[color-mix(in_oklab,var(--ink)_6%,transparent)] hover:text-ink focus-ring md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"
                       >
                         <svg aria-hidden viewBox="0 0 24 24" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17v3zM14.5 6.5l3 3" />
@@ -552,7 +776,7 @@ export function JobsTable({ jobs, onChanged }: Props) {
                       <button
                         onClick={() => remove(job)}
                         aria-label={`Delete ${job.role} at ${job.company}`}
-                        className="rounded p-1 text-faint opacity-0 transition-opacity group-hover:opacity-100 hover:bg-[color-mix(in_oklab,var(--red,#dc2626)_10%,transparent)] hover:text-red-600 focus-ring focus-visible:opacity-100"
+                        className="rounded p-1 text-faint transition-opacity hover:bg-[color-mix(in_oklab,var(--red,#dc2626)_10%,transparent)] hover:text-red-600 focus-ring md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"
                       >
                         <svg aria-hidden viewBox="0 0 24 24" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />

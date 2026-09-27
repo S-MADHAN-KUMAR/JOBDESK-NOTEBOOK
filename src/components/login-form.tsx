@@ -45,9 +45,9 @@ export function LoginForm({ next }: Props) {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-[560px] flex-col justify-center px-6 py-16 sm:py-24">
+    <div className="mx-auto flex w-full max-w-[560px] flex-col justify-center px-4 py-10 sm:px-6 sm:py-24">
       <p className="meta">Jobdesk Notebook</p>
-      <h1 className="mt-3 text-3xl leading-tight font-semibold tracking-tight sm:text-4xl">
+      <h1 className="mt-3 text-2xl leading-tight font-semibold tracking-tight sm:text-4xl">
         Sign in.
       </h1>
 

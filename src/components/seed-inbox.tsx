@@ -183,7 +183,7 @@ export function SeedInbox() {
 
   return (
     <div
-      className="mx-auto w-full max-w-[1440px] px-6 py-10"
+      className="mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 sm:py-10"
       onDragOver={(e) => {
         e.preventDefault();
         setDragging(true);
@@ -193,9 +193,9 @@ export function SeedInbox() {
       }}
       onDrop={handleDrop}
     >
-      <div className="mb-8 max-w-[58ch]">
+      <div className="mb-6 max-w-[58ch] sm:mb-8">
         <p className="meta">Seed</p>
-        <h1 className="mt-2 text-3xl leading-tight font-semibold tracking-tight sm:text-4xl">
+        <h1 className="mt-2 text-2xl leading-tight font-semibold tracking-tight sm:text-4xl">
           A blank page.
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-muted">
@@ -206,7 +206,7 @@ export function SeedInbox() {
         </p>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:gap-8">
         {/* ------------------------------- inbox ------------------------------- */}
         <section aria-label="Paste inbox" className="min-w-0">
           <div className="relative">
@@ -219,7 +219,7 @@ export function SeedInbox() {
               placeholder={
                 "Paste anything here.\n\nSenior Backend Engineer — Zerodha\nBengaluru · 3-5 yrs\nHR: Karthik Iyer\n+91 88670 90123\nPosted 25/09/2026\n\n…order does not matter."
               }
-              className="min-h-[26rem] w-full resize-y rounded-lg border border-rule-strong bg-raised p-5 font-mono text-[13px] text-ink placeholder:text-faint focus-ring"
+              className="min-h-[16rem] w-full resize-y rounded-lg border border-rule-strong bg-raised p-4 font-mono text-[13px] break-words text-ink placeholder:text-faint focus-ring sm:min-h-[26rem] sm:p-5"
               style={{
                 lineHeight: "28px",
                 backgroundImage:
@@ -236,11 +236,11 @@ export function SeedInbox() {
             )}
           </div>
 
-          <div className="mt-3 flex flex-wrap items-center gap-3">
+          <div className="mt-3 flex flex-wrap items-center gap-2 sm:gap-3">
             <button
               onClick={() => runOrganize(text)}
               disabled={busy || !text.trim()}
-              className="h-9 rounded-md bg-ink px-3.5 text-sm font-medium text-paper transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40 focus-ring"
+              className="h-9 flex-1 rounded-md bg-ink px-3.5 text-sm font-medium text-paper transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40 focus-ring sm:flex-none"
             >
               {busy ? "Organising…" : "Organise"}
             </button>
@@ -315,19 +315,80 @@ export function SeedInbox() {
           </div>
 
           {staged.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-rule-strong px-6 py-14 text-center">
+            <div className="rounded-lg border border-dashed border-rule-strong px-6 py-10 text-center sm:py-14">
               <p className="text-sm text-muted">
                 {busy ? "Reading your paste…" : "Nothing organised yet."}
               </p>
               <p className="meta mt-2">
                 {busy
                   ? "Extracting role, company, HR and phone"
-                  : "Press Organise on the left — nothing is mapped until you do"}
+                  : "Press Organise above — nothing is mapped until you do"}
               </p>
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
+              {/* Mobile cards */}
+              <div className="space-y-3 sm:hidden">
+                {staged.map((row) => (
+                  <article
+                    key={row.key}
+                    className={`min-w-0 rounded-lg border p-4 transition-opacity ${
+                      row.include
+                        ? "border-rule bg-raised"
+                        : "border-dashed border-rule-strong bg-paper opacity-60"
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <input
+                        type="checkbox"
+                        checked={row.include}
+                        onChange={(e) => {
+                          const include = e.target.checked;
+                          setStaged((prev) =>
+                            prev.map((r) => (r.key === row.key ? { ...r, include } : r))
+                          );
+                        }}
+                        aria-label={`Include ${row.role} at ${row.company}`}
+                        className="mt-1 size-4 shrink-0 accent-[var(--accent)] focus-ring"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[15px] font-medium text-ink">{row.role}</p>
+                        <p className="mt-0.5 truncate text-sm text-muted">{row.company}</p>
+                        <p className="meta mt-1.5">
+                          {formatDate(row.postedDate)}
+                          {row.location ? ` · ${row.location}` : ""}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setStaged((prev) => prev.filter((r) => r.key !== row.key))}
+                        aria-label={`Remove ${row.role}`}
+                        className="rounded p-1 text-faint hover:text-ink focus-ring"
+                      >
+                        <svg aria-hidden viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M6 6l12 12M18 6L6 18" />
+                        </svg>
+                      </button>
+                    </div>
+                    <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-rule pt-3 text-sm">
+                      <span className={row.hrName ? "text-ink" : "text-faint"}>
+                        {row.hrName ?? "No HR name"}
+                      </span>
+                      {row.hrPhone ? (
+                        <a
+                          href={`tel:${row.hrPhone.replace(/[^\d+]/g, "")}`}
+                          className="rounded-md border border-rule-strong px-2 py-1 font-mono text-xs text-accent-ink focus-ring"
+                        >
+                          {row.hrPhone}
+                        </a>
+                      ) : (
+                        <span className="font-mono text-xs text-faint">no phone</span>
+                      )}
+                    </div>
+                  </article>
+                ))}
+              </div>
+
+              <div className="scroll-x hidden sm:block">
                 <table className="spec-table min-w-[560px]">
                   <thead>
                     <tr>
@@ -384,7 +445,7 @@ export function SeedInbox() {
                           <button
                             onClick={() => setStaged((prev) => prev.filter((r) => r.key !== row.key))}
                             aria-label={`Remove ${row.role}`}
-                            className="rounded p-1 text-faint opacity-0 transition-opacity group-hover:opacity-100 hover:text-ink focus-ring focus-visible:opacity-100"
+                            className="rounded p-1 text-faint transition-opacity hover:text-ink focus-ring md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"
                           >
                             <svg aria-hidden viewBox="0 0 24 24" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="2">
                               <path d="M6 6l12 12M18 6L6 18" />
@@ -397,24 +458,24 @@ export function SeedInbox() {
                 </table>
               </div>
 
-              <div className="mt-4 flex flex-wrap items-center gap-3">
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
                 <button
                   onClick={save}
                   disabled={saving || includedCount === 0}
-                  className="h-9 rounded-md bg-accent px-4 text-sm font-medium text-white transition-colors hover:bg-accent-ink disabled:cursor-not-allowed disabled:opacity-40 focus-ring"
+                  className="h-9 w-full rounded-md bg-accent px-4 text-sm font-medium text-white transition-colors hover:bg-accent-ink disabled:cursor-not-allowed disabled:opacity-40 focus-ring sm:w-auto"
                 >
                   {saving ? "Saving…" : `Add ${includedCount} to dashboard`}
                 </button>
                 <button
                   onClick={() => setStaged([])}
                   disabled={saving}
-                  className="h-9 rounded-md border border-rule-strong bg-raised px-3 text-sm text-muted transition-colors hover:text-ink disabled:opacity-40 focus-ring"
+                  className="h-9 w-full rounded-md border border-rule-strong bg-raised px-3 text-sm text-muted transition-colors hover:text-ink disabled:opacity-40 focus-ring sm:w-auto"
                 >
                   Discard
                 </button>
                 <button
                   onClick={() => router.push("/")}
-                  className="ml-auto text-sm text-muted underline-offset-2 hover:text-ink hover:underline focus-ring"
+                  className="mt-1 text-sm text-muted underline-offset-2 hover:text-ink hover:underline focus-ring sm:ml-auto sm:mt-0"
                 >
                   Back to dashboard
                 </button>
