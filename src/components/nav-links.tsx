@@ -28,7 +28,7 @@ export function NavLinks() {
             aria-current={active ? "page" : undefined}
             className={`rounded-md px-2 py-1.5 transition-colors focus-ring sm:px-2.5 ${
               active
-                ? "bg-raised/70 font-medium text-ink shadow-card backdrop-blur-md"
+                ? "bg-accent font-medium text-white shadow-card backdrop-blur-md"
                 : "text-muted hover:bg-tint-sand hover:text-ink"
             }`}
           >

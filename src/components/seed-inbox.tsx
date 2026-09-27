@@ -193,18 +193,7 @@ export function SeedInbox() {
       }}
       onDrop={handleDrop}
     >
-      <div className="accent-band mb-6 max-w-[58ch] rounded-3xl border border-rule px-5 py-6 shadow-card sm:mb-8 sm:px-7 sm:py-7">
-        <p className="meta">Seed</p>
-        <h1 className="mt-2 text-2xl leading-tight font-semibold tracking-tight sm:text-3xl">
-          A blank page.
-        </h1>
-        <p className="mt-3 text-sm leading-relaxed text-muted">
-          Paste or drop the raw scrape — WhatsApp forward, board export, half a PDF.
-          Nothing is mapped until you press <strong className="font-medium text-ink">Organise</strong>:
-          the model then reads the whole paste and puts role, company, HR contact and
-          phone back where they belong.
-        </p>
-      </div>
+      <h1 className="sr-only">Seed</h1>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:gap-8">
         {/* ------------------------------- inbox ------------------------------- */}
