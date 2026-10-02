@@ -434,7 +434,7 @@ export function SeedInbox() {
                           <button
                             onClick={() => setStaged((prev) => prev.filter((r) => r.key !== row.key))}
                             aria-label={`Remove ${row.role}`}
-                            className="rounded p-1 text-faint transition-opacity hover:text-ink focus-ring md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"
+                            className="rounded p-1 text-faint transition-colors hover:text-ink focus-ring"
                           >
                             <svg aria-hidden viewBox="0 0 24 24" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="2">
                               <path d="M6 6l12 12M18 6L6 18" />

@@ -31,3 +31,15 @@ CREATE INDEX IF NOT EXISTS jobs_posted_date_idx ON jobs (posted_date DESC NULLS 
 CREATE INDEX IF NOT EXISTS jobs_reached_idx     ON jobs (reached);
 CREATE INDEX IF NOT EXISTS jobs_company_idx     ON jobs (lower(company));
 CREATE INDEX IF NOT EXISTS jobs_created_at_idx  ON jobs (created_at DESC);
+
+-- Single-row profile: resume + links used for WhatsApp outreach messages.
+CREATE TABLE IF NOT EXISTS profile (
+  id              integer PRIMARY KEY DEFAULT 1,
+  resume_text     text,
+  resume_filename text,
+  resume_data     bytea,
+  portfolio_url   text,
+  linkedin_url    text,
+  github_url     text,
+  updated_at      timestamptz NOT NULL DEFAULT now()
+);

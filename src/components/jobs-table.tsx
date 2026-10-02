@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import type { Job } from "@/lib/jobs";
+import { WhatsAppModal } from "@/components/whatsapp-modal";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -94,6 +95,9 @@ export function JobsTable({ jobs, onChanged }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
+
+  // WhatsApp message modal.
+  const [whatsappJob, setWhatsappJob] = useState<Job | null>(null);
 
   const visible = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -540,18 +544,28 @@ export function JobsTable({ jobs, onChanged }: Props) {
                   />
                   <span className="text-xs text-muted">Reached</span>
                 </label>
-                <span className="ml-auto inline-flex items-center gap-1">
+                <span className="ml-auto inline-flex items-center gap-2">
+                  <button
+                    onClick={() => setWhatsappJob(job)}
+                    aria-label={`WhatsApp message for ${job.role} at ${job.company}`}
+                    title="Generate WhatsApp message"
+                    className="rounded-md border border-ok/25 bg-tint-sage px-2.5 py-1.5 text-xs text-ok transition-colors hover:bg-ok hover:text-white focus-ring"
+                  >
+                    <svg aria-hidden viewBox="0 0 24 24" className="size-4" fill="currentColor">
+                      <path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2c-1.6 0-3.1-.4-4.4-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.6-6.1c-.3-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1-.2.3-.6.8-.8 1-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4 0-.5.1-.7l.4-.5c.1-.2.1-.3 0-.5l-.8-1.9c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.2s.9 2.5 1.1 2.7c.1.2 1.9 2.9 4.6 4 .6.3 1.1.4 1.5.6.6.2 1.2.2 1.6.1.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.2-.2-.5-.3z" />
+                    </svg>
+                  </button>
                   <button
                     onClick={() => startEdit(job)}
                     aria-label={`Edit ${job.role} at ${job.company}`}
-                    className="rounded-md border border-rule-strong px-2.5 py-1.5 text-xs text-muted transition-colors hover:text-ink focus-ring"
+                    className="rounded-md border border-accent/25 bg-accent-wash px-2.5 py-1.5 text-xs font-medium text-accent-ink transition-colors hover:bg-accent hover:text-white focus-ring"
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => remove(job)}
                     aria-label={`Delete ${job.role} at ${job.company}`}
-                    className="rounded-md border border-rule-strong px-2.5 py-1.5 text-xs text-muted transition-colors hover:border-red-200 hover:text-red-600 focus-ring"
+                    className="rounded-md border border-red-200 bg-tint-blush px-2.5 py-1.5 text-xs font-medium text-tint-blush-ink transition-colors hover:border-red-600 hover:bg-red-600 hover:text-white focus-ring"
                   >
                     Delete
                   </button>
@@ -584,7 +598,7 @@ export function JobsTable({ jobs, onChanged }: Props) {
               <th scope="col">Phone</th>
               <th scope="col" className="w-[13rem]">Notes</th>
               <th scope="col" className="w-[7rem] text-right">Reached</th>
-              <th scope="col" className="w-16"><span className="sr-only">Actions</span></th>
+              <th scope="col" className="w-24"><span className="sr-only">Actions</span></th>
             </tr>
           </thead>
           <tbody>
@@ -782,20 +796,30 @@ export function JobsTable({ jobs, onChanged }: Props) {
                   <td className="text-right">
                     <span className="inline-flex items-center gap-1">
                       <button
+                        onClick={() => setWhatsappJob(job)}
+                        aria-label={`WhatsApp message for ${job.role} at ${job.company}`}
+                        title="Generate WhatsApp message"
+                        className="rounded-md border border-ok/25 bg-tint-sage p-1.5 text-ok transition-colors hover:bg-ok hover:text-white focus-ring"
+                      >
+                        <svg aria-hidden viewBox="0 0 24 24" className="size-4" fill="currentColor">
+                          <path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2c-1.6 0-3.1-.4-4.4-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.6-6.1c-.3-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1-.2.3-.6.8-.8 1-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4 0-.5.1-.7l.4-.5c.1-.2.1-.3 0-.5l-.8-1.9c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.2s.9 2.5 1.1 2.7c.1.2 1.9 2.9 4.6 4 .6.3 1.1.4 1.5.6.6.2 1.2.2 1.6.1.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.2-.2-.5-.3z" />
+                        </svg>
+                      </button>
+                      <button
                         onClick={() => startEdit(job)}
                         aria-label={`Edit ${job.role} at ${job.company}`}
-                        className="rounded p-1 text-faint transition-opacity hover:bg-[color-mix(in_oklab,var(--ink)_6%,transparent)] hover:text-ink focus-ring md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"
+                        className="rounded-md border border-accent/25 bg-accent-wash p-1.5 text-accent-ink transition-colors hover:bg-accent hover:text-white focus-ring"
                       >
-                        <svg aria-hidden viewBox="0 0 24 24" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="2">
+                        <svg aria-hidden viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17v3zM14.5 6.5l3 3" />
                         </svg>
                       </button>
                       <button
                         onClick={() => remove(job)}
                         aria-label={`Delete ${job.role} at ${job.company}`}
-                        className="rounded p-1 text-faint transition-opacity hover:bg-[color-mix(in_oklab,var(--red,#dc2626)_10%,transparent)] hover:text-red-600 focus-ring md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"
+                        className="rounded-md border border-red-200 bg-tint-blush p-1.5 text-tint-blush-ink transition-colors hover:border-red-600 hover:bg-red-600 hover:text-white focus-ring"
                       >
-                        <svg aria-hidden viewBox="0 0 24 24" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="2">
+                        <svg aria-hidden viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
                         </svg>
                       </button>
@@ -807,6 +831,9 @@ export function JobsTable({ jobs, onChanged }: Props) {
           </tbody>
         </table>
       </div>
+      {whatsappJob && (
+        <WhatsAppModal job={whatsappJob} onClose={() => setWhatsappJob(null)} />
+      )}
     </section>
   );
 }
